@@ -12,7 +12,15 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "coverage/**",
   ]),
+  {
+    files: ["**/*.{js,mjs,jsx,ts,tsx}"],
+    rules: {
+      // Cap cyclomatic complexity per function.
+      complexity: ["error", { max: 10 }],
+    },
+  },
 ]);
 
 export default eslintConfig;
