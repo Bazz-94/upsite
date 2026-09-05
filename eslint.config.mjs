@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
     rules: {
       // Cap cyclomatic complexity per function.
       complexity: ["error", { max: 10 }],
+      "max-depth": ["warn", 6],
+      "max-lines-per-function": ["warn", { "max": 50, "skipBlankLines": true, "skipComments": true }],
     },
   },
 ]);
