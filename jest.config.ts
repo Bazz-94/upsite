@@ -10,8 +10,9 @@ const config: Config = {
   coverageProvider: 'v8',
   // Backend code only — no DOM.
   testEnvironment: 'node',
-  testMatch: ['<rootDir>/lib/**/*.test.ts', '<rootDir>/__tests__/**/*.test.ts'],
-  collectCoverageFrom: ['lib/**/*.ts', '!lib/**/*.test.ts', '!lib/**/*.d.ts'],
+  testMatch: ['<rootDir>/src/app.tests/**/*.test.ts'],
+  // Backend code: server-only modules plus the isomorphic helpers they share.
+  collectCoverageFrom: ['src/server/**/*.ts', 'src/shared/**/*.ts', '!src/**/*.d.ts'],
   coverageThreshold: {
     global: {
       branches: 95,
