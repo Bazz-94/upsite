@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A website that is updatable through an admin page. Right now it is a fresh Next.js 16 App Router scaffold (React 19, Tailwind v4, TypeScript) — no admin page or custom features exist yet.
+A website that is updatable through an admin page. Right now it is a fresh Next.js 16 App Router scaffold (React 19, Tailwind v4, TypeScript) — no admin page or custom features exist yet. `src/` holds only `app/`; `server/`, `shared/`, `client/` and `app.tests/` are planned but not created.
+
+Read `.claude/rules/standards.md` before writing code — it is the source of truth for structure and conventions (JSDoc on every function and property, Zustand for state, never mix `'use server'` and `'use client'` in one file). Zustand is not installed yet; add it when state management starts.
 
 ## Commands
 
@@ -15,11 +17,14 @@ A website that is updatable through an admin page. Right now it is a fresh Next.
 - `npm run start` — serve the production build
 - `npm run lint` — eslint (flat config, `eslint.config.mjs`)
 - `npm test` — jest (`test:watch`, `test:coverage`)
+- `npm test -- src/app.tests/server/foo.test.ts` — one file; add `-t "name"` for one test
 
 Jest is backend-only: `jest.config.ts` uses `next/jest`, runs in the `node` environment, and
 only picks up `src/app.tests/**/*.test.ts`. Coverage is collected from `src/server/` and
 `src/shared/` with a 95% threshold. `passWithNoTests` is on until the first tests land — remove it then.
 No UI test setup (jsdom, React Testing Library) is installed.
+
+ESLint adds three limits on top of `eslint-config-next`: cyclomatic complexity max 10 (error), max nesting depth 6, max 50 lines per function (both warn).
 
 ## Architecture
 
