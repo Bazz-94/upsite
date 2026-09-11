@@ -1,0 +1,147 @@
+// The content store. Every page keeps a draft copy and a published copy of its
+// content, told apart by the `kind` column on PageVersion and Section.
+//
+// Sections use class-table inheritance: a Section row holds what every section
+// shares, and one child row per type holds the rest.
+//
+// Ids the domain model carries (sectionId, fieldId, itemId) stay the same in both
+// copies of a page, so they cannot be primary keys. Each row therefore has its own
+// `rowId`, and the domain id is unique within one copy.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Which copy of a page's content a row belongs to.
+enum VersionKind {
+  draft
+  published
+}
+
+/// The kinds of section a page can hold.
+enum SectionType {
+  paragraph
+  list
+  image
+}
+
+/// A page. Holds only what does not differ between the draft and published copies.
+model Page {
+  id         String   @id
+  slug       String   @unique
+  navOrder   Int
+  navVisible Boolean  @default(true)
+  published  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  versions PageVersion[]
+  sections Section[]
+}
+
+/// One copy of a page's non-section content.
+model PageVersion {
+  rowId         String      @id @default(uuid(7))
+  pageId        String
+  kind          VersionKind
+  title         String
+  heroImageName String?
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, kind])
+}
+
+/// One section of one copy of a page.
+model Section {
+  rowId     String      @id @default(uuid(7))
+  sectionId String
+  pageId    String
+  kind      VersionKind
+  position  Int
+  type      SectionType
+
+  page      Page              @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  paragraph ParagraphSection?
+  image     ImageSection?
+  list      ListSection?
+
+  @@unique([pageId, kind, sectionId])
+  @@unique([pageId, kind, position])
+}
+
+/// Body text with an optional heading.
+model ParagraphSection {
+  sectionRowId String  @id
+  title        String?
+  body         String
+
+  section Section @relation(fields: [sectionRowId], references: [rowId], onDelete: Cascade)
+}
+
+/// A single image, referenced by name rather than by storage location.
+model ImageSection {
+  sectionRowId String  @id
+  imageName    String
+  caption      String?
+
+  section Section @relation(fields: [sectionRowId], references: [rowId], onDelete: Cascade)
+}
+
+/// A table of items, with the columns the admin defined.
+model ListSection {
+  sectionRowId String  @id
+  title        String?
+
+  section Section     @relation(fields: [sectionRowId], references: [rowId], onDelete: Cascade)
+  fields  ListField[]
+  items   ListItem[]
+}
+
+/// One column of a list section.
+model ListField {
+  rowId        String @id @default(uuid(7))
+  fieldId      String
+  sectionRowId String
+  label        String
+  position     Int
+
+  listSection ListSection @relation(fields: [sectionRowId], references: [sectionRowId], onDelete: Cascade)
+  values      ListValue[]
+
+  @@unique([sectionRowId, fieldId])
+  @@unique([sectionRowId, position])
+}
+
+/// One row of a list section.
+model ListItem {
+  rowId        String @id @default(uuid(7))
+  itemId       String
+  sectionRowId String
+  position     Int
+
+  listSection ListSection @relation(fields: [sectionRowId], references: [sectionRowId], onDelete: Cascade)
+  values      ListValue[]
+
+  @@unique([sectionRowId, itemId])
+  @@unique([sectionRowId, position])
+}
+
+/// What one item holds for one field.
+model ListValue {
+  rowId       String @id @default(uuid(7))
+  itemRowId   String
+  fieldRowId  String
+  value       String
+
+  item  ListItem  @relation(fields: [itemRowId], references: [rowId], onDelete: Cascade)
+  field ListField @relation(fields: [fieldRowId], references: [rowId], onDelete: Cascade)
+
+  @@unique([itemRowId, fieldRowId])
+  @@index([fieldRowId])
+}
