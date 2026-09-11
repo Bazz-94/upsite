@@ -13,6 +13,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "coverage/**",
+    "src/generated/**",
+    "playwright-report/**",
+    "test-results/**",
   ]),
   {
     files: ["**/*.{js,mjs,jsx,ts,tsx}"],
@@ -21,6 +24,13 @@ const eslintConfig = defineConfig([
       complexity: ["error", { max: 10 }],
       "max-depth": ["warn", 6],
       "max-lines-per-function": ["warn", { max: 50, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  {
+    // A describe block is a grouping, not a function to keep short.
+    files: ["src/*.tests/**/*.ts"],
+    rules: {
+      "max-lines-per-function": "off",
     },
   },
 ]);

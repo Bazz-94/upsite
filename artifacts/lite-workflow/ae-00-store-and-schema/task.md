@@ -1,6 +1,6 @@
 # ae-00 - Store and schema
 
-* **Status**: Not started
+* **Status**: Done
 * **Description**: The database and the single interface every part of the site uses to read and write content.
 * **Dependencies**: none
 
@@ -24,3 +24,5 @@ The site is a small content-managed website: three pages to start with, each mad
 ## Notes
 1. Postgres is used for both development (local) and production (Neon), with the same schema.
 2. Images are referenced by name because deleting and re-uploading an image with the same filename must repair the link (agreed during ideation).
+3. The write side of the interface is one whole-page draft save, not per-section operations. ae-20 and ae-25 read a draft, change it and save it back, so validation only ever runs in one place (agreed during planning).
+4. "On first run" (requirement 6) means an explicit, idempotent seed script run as a setup step, not a check on every app boot (agreed during planning).

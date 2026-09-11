@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A website that is updatable through an admin page. Right now it is a fresh Next.js 16 App Router scaffold (React 19, Tailwind v4, TypeScript) — no admin page or custom features exist yet. `src/` holds only `app/`; `server/`, `shared/`, `client/` and `app.tests/` are planned but not created.
+A website that is updatable through an admin page. Built on Next.js 16 App Router (React 19, Tailwind v4, TypeScript). The content store is in place — Postgres through Prisma 7, reached only through `src/server/content/` — and the pages it serves are seeded placeholders. No admin page or public site UI exists yet; `src/client/` is still empty.
 
 Read `.claude/rules/standards.md` before writing code — it is the source of truth for structure and conventions (JSDoc on every function and property, Zustand for state, never mix `'use server'` and `'use client'` in one file). Zustand is not installed yet; add it when state management starts.
 
@@ -16,15 +16,41 @@ Read `.claude/rules/standards.md` before writing code — it is the source of tr
 - `npm run build` — production build
 - `npm run start` — serve the production build
 - `npm run lint` — eslint (flat config, `eslint.config.mjs`)
-- `npm test` — jest (`test:watch`, `test:coverage`)
-- `npm test -- src/app.tests/server/foo.test.ts` — one file; add `-t "name"` for one test
+- `npm test` — jest, backend only (`test:watch`, `test:coverage`)
+- `npm test -- src/server.tests/foo.test.ts` — one file; add `-t "name"` for one test
+- `npm run test:ui` — playwright, UI only (`test:ui:headed`, `test:ui:report`)
+- `npx playwright test src/app.tests/home.spec.ts` — one UI file
+
+Tests live in a `.tests` dir per source dir: `src/app.tests/` (Playwright `*.spec.ts`),
+`src/server.tests/` and `src/shared.tests/` (Jest `*.test.ts`).
 
 Jest is backend-only: `jest.config.ts` uses `next/jest`, runs in the `node` environment, and
-only picks up `src/app.tests/**/*.test.ts`. Coverage is collected from `src/server/` and
-`src/shared/` with a 95% threshold. `passWithNoTests` is on until the first tests land — remove it then.
-No UI test setup (jsdom, React Testing Library) is installed.
+only picks up `src/server.tests/` and `src/shared.tests/`. Coverage is collected from `src/server/`
+and `src/shared/` with a 95% threshold, minus the database wiring and the Prisma repository, which
+the integration test covers instead.
+
+Playwright (`playwright.config.ts`) covers the UI in Chromium. It starts `npm run dev` itself
+(reusing a running one locally) and hits `http://localhost:3000`, overridable with
+`PLAYWRIGHT_BASE_URL`. React components are not unit tested — no jsdom or React Testing Library.
 
 ESLint adds three limits on top of `eslint-config-next`: cyclomatic complexity max 10 (error), max nesting depth 6, max 50 lines per function (both warn).
+
+## Content store
+
+Content lives in Postgres. `npm run db:setup` applies the migrations and seeds Home, Activities and
+About; see the README for `DATABASE_URL`. The Prisma client is generated into `src/generated/prisma`
+(gitignored, rebuilt by `postinstall`), and Prisma is configured in `prisma7.config.ts`, not
+package.json.
+
+Everything reads and writes through `contentStore` from `@/server/content` — `pages` for reads,
+`create`, `delete` and one whole-page `saveDraft`, and `publishing` for moving a draft to the
+published copy and back. Content is validated by the Zod schemas in `src/shared/content/` on the way
+in, so the rules live in one place; bad content raises `ContentValidationError`, which names each
+failing field. Storage sits behind `ContentRepository`, with a Postgres implementation and an
+in-memory one the tests use.
+
+The Prisma integration test runs only when `TEST_DATABASE_URL` is set, and empties the tables it
+uses — never point it at your development database.
 
 ## Architecture
 
